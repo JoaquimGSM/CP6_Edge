@@ -82,9 +82,7 @@ O pino digital **DO** não foi utilizado. A leitura exibida representa o valor a
 
 ### Esquema de ligação no Wokwi
 
-![Circuito do projeto com ESP32, DHT22 e LDR](imagens/circuito-wokwi.png)
-
-As conexões também podem ser verificadas no arquivo [`wokwi/diagram.json`](wokwi/diagram.json).
+As conexões podem ser verificadas no arquivo [`wokwi/diagram.json`](wokwi/diagram.json).
 
 ## Arquitetura do projeto
 
