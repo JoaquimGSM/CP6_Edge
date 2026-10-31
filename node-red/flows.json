@@ -1,0 +1,638 @@
+[
+  {
+    "id": "cp6flow01",
+    "type": "tab",
+    "label": "CP6 Vinheria Agnello - Reconstruido",
+    "disabled": false,
+    "info": "Fluxo reconstruído a partir do código do Wokwi e das configurações compartilhadas na conversa. NÃO É a exportação original da faculdade. Testar ao importar.",
+    "env": []
+  },
+  {
+    "id": "mqttvin",
+    "type": "mqtt in",
+    "z": "cp6flow01",
+    "name": "ESP32 Vinheria (sensores)",
+    "topic": "/TEF/vinheria001joaquim/attrs",
+    "qos": "0",
+    "datatype": "auto-detect",
+    "broker": "cp6mqttbroker",
+    "nl": false,
+    "rap": true,
+    "rh": 0,
+    "inputs": 0,
+    "x": 170,
+    "y": 180,
+    "wires": [
+      [
+        "parsevin"
+      ]
+    ]
+  },
+  {
+    "id": "parsevin",
+    "type": "function",
+    "z": "cp6flow01",
+    "name": "Interpretar sensores + timestamp",
+    "func": "// Recebe: t|24.00|u|40.00|l|1001\nconst partes = String(msg.payload).split('|');\nif (partes.length !== 6 || partes[0] !== 't' || partes[2] !== 'u' || partes[4] !== 'l') {\n    node.warn('Mensagem descartada: formato inesperado');\n    return null;\n}\nconst temperatura = Number(partes[1]);\nconst umidade = Number(partes[3]);\nconst luminosidade = Number(partes[5]);\nif (![temperatura, umidade, luminosidade].every(Number.isFinite)) {\n    node.warn('Mensagem descartada: valor nao numerico');\n    return null;\n}\nmsg.payload = {\n    temperatura,\n    umidade,\n    luminosidade,\n    timestamp: new Date().toISOString() // Horario de recebimento no Node-RED\n};\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 430,
+    "y": 180,
+    "wires": [
+      [
+        "debugvin",
+        "change_t",
+        "change_u",
+        "change_l",
+        "make_csv"
+      ]
+    ]
+  },
+  {
+    "id": "debugvin",
+    "type": "debug",
+    "z": "cp6flow01",
+    "name": "Leituras processadas",
+    "active": true,
+    "tosidebar": true,
+    "console": false,
+    "tostatus": false,
+    "complete": "payload",
+    "targetType": "msg",
+    "statusVal": "",
+    "statusType": "auto",
+    "x": 730,
+    "y": 70,
+    "wires": []
+  },
+  {
+    "id": "change_t",
+    "type": "change",
+    "z": "cp6flow01",
+    "name": "Extrair Temperatura",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "payload.temperatura",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "topic",
+        "pt": "msg",
+        "to": "Temperatura",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "reg": false,
+    "x": 730,
+    "y": 160,
+    "wires": [
+      [
+        "gauge_t",
+        "chart_t"
+      ]
+    ]
+  },
+  {
+    "id": "gauge_t",
+    "type": "ui-gauge",
+    "z": "cp6flow01",
+    "name": "Temperatura",
+    "group": "cp6uigroup",
+    "order": 1,
+    "value": "payload",
+    "valueType": "msg",
+    "width": "4",
+    "height": "3",
+    "gtype": "gauge-half",
+    "gstyle": "needle",
+    "title": "Temperatura",
+    "alwaysShowTitle": false,
+    "floatingTitlePosition": "top-left",
+    "units": "°C",
+    "icon": "",
+    "prefix": "",
+    "suffix": "",
+    "segments": [
+      {
+        "from": "0",
+        "color": "#54D45A",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "25",
+        "color": "#FFD23F",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "30",
+        "color": "#E95056",
+        "text": "",
+        "textType": "label"
+      }
+    ],
+    "min": 0,
+    "max": 50,
+    "sizeThickness": 16,
+    "sizeGap": 4,
+    "sizeKeyThickness": 8,
+    "styleRounded": true,
+    "styleGlow": false,
+    "className": "",
+    "x": 1020,
+    "y": 130,
+    "wires": []
+  },
+  {
+    "id": "chart_t",
+    "type": "ui-chart",
+    "z": "cp6flow01",
+    "name": "Historico Temperatura",
+    "label": "Histórico de Temperatura",
+    "group": "cp6uigroup",
+    "order": 4,
+    "chartType": "line",
+    "category": "topic",
+    "categoryType": "msg",
+    "xAxisLabel": "Horário",
+    "xAxisProperty": "",
+    "xAxisPropertyType": "timestamp",
+    "xAxisType": "time",
+    "xAxisFormat": "auto",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "Temperatura (°C)",
+    "yAxisProperty": "",
+    "yAxisPropertyType": "msg",
+    "ymin": "0",
+    "ymax": "50",
+    "bins": "",
+    "action": "append",
+    "stackSeries": false,
+    "pointShape": "circle",
+    "pointRadius": 4,
+    "showLegend": true,
+    "removeOlder": "10",
+    "removeOlderUnit": "60",
+    "removeOlderPoints": "600",
+    "colors": [
+      "#0095ff",
+      "#ff7f0e",
+      "#2ca02c",
+      "#9467bd"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": "6",
+    "height": "4",
+    "className": "",
+    "interpolation": "linear",
+    "x": 1020,
+    "y": 185,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "change_u",
+    "type": "change",
+    "z": "cp6flow01",
+    "name": "Extrair Umidade",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "payload.umidade",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "topic",
+        "pt": "msg",
+        "to": "Umidade",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "reg": false,
+    "x": 730,
+    "y": 310,
+    "wires": [
+      [
+        "gauge_u",
+        "chart_u"
+      ]
+    ]
+  },
+  {
+    "id": "gauge_u",
+    "type": "ui-gauge",
+    "z": "cp6flow01",
+    "name": "Umidade",
+    "group": "cp6uigroup",
+    "order": 2,
+    "value": "payload",
+    "valueType": "msg",
+    "width": "4",
+    "height": "3",
+    "gtype": "gauge-half",
+    "gstyle": "needle",
+    "title": "Umidade",
+    "alwaysShowTitle": false,
+    "floatingTitlePosition": "top-left",
+    "units": "%",
+    "icon": "",
+    "prefix": "",
+    "suffix": "",
+    "segments": [
+      {
+        "from": "0",
+        "color": "#E95056",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "30",
+        "color": "#54D45A",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "75",
+        "color": "#E95056",
+        "text": "",
+        "textType": "label"
+      }
+    ],
+    "min": 0,
+    "max": 100,
+    "sizeThickness": 16,
+    "sizeGap": 4,
+    "sizeKeyThickness": 8,
+    "styleRounded": true,
+    "styleGlow": false,
+    "className": "",
+    "x": 1020,
+    "y": 280,
+    "wires": []
+  },
+  {
+    "id": "chart_u",
+    "type": "ui-chart",
+    "z": "cp6flow01",
+    "name": "Historico Umidade",
+    "label": "Histórico de Umidade",
+    "group": "cp6uigroup",
+    "order": 5,
+    "chartType": "line",
+    "category": "topic",
+    "categoryType": "msg",
+    "xAxisLabel": "Horário",
+    "xAxisProperty": "",
+    "xAxisPropertyType": "timestamp",
+    "xAxisType": "time",
+    "xAxisFormat": "auto",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "Umidade (%)",
+    "yAxisProperty": "",
+    "yAxisPropertyType": "msg",
+    "ymin": "0",
+    "ymax": "100",
+    "bins": "",
+    "action": "append",
+    "stackSeries": false,
+    "pointShape": "circle",
+    "pointRadius": 4,
+    "showLegend": true,
+    "removeOlder": "10",
+    "removeOlderUnit": "60",
+    "removeOlderPoints": "600",
+    "colors": [
+      "#0095ff",
+      "#ff7f0e",
+      "#2ca02c",
+      "#9467bd"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": "6",
+    "height": "4",
+    "className": "",
+    "interpolation": "linear",
+    "x": 1020,
+    "y": 335,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "change_l",
+    "type": "change",
+    "z": "cp6flow01",
+    "name": "Extrair Luminosidade",
+    "rules": [
+      {
+        "t": "set",
+        "p": "payload",
+        "pt": "msg",
+        "to": "payload.luminosidade",
+        "tot": "msg"
+      },
+      {
+        "t": "set",
+        "p": "topic",
+        "pt": "msg",
+        "to": "Luminosidade",
+        "tot": "str"
+      }
+    ],
+    "action": "",
+    "property": "",
+    "reg": false,
+    "x": 730,
+    "y": 460,
+    "wires": [
+      [
+        "gauge_l",
+        "chart_l"
+      ]
+    ]
+  },
+  {
+    "id": "gauge_l",
+    "type": "ui-gauge",
+    "z": "cp6flow01",
+    "name": "Luminosidade",
+    "group": "cp6uigroup",
+    "order": 3,
+    "value": "payload",
+    "valueType": "msg",
+    "width": "4",
+    "height": "3",
+    "gtype": "gauge-half",
+    "gstyle": "needle",
+    "title": "Luminosidade",
+    "alwaysShowTitle": false,
+    "floatingTitlePosition": "top-left",
+    "units": "ADC",
+    "icon": "",
+    "prefix": "",
+    "suffix": "",
+    "segments": [
+      {
+        "from": "0",
+        "color": "#47A3E3",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "1600",
+        "color": "#FFD23F",
+        "text": "",
+        "textType": "label"
+      },
+      {
+        "from": "3200",
+        "color": "#E95056",
+        "text": "",
+        "textType": "label"
+      }
+    ],
+    "min": 0,
+    "max": 4095,
+    "sizeThickness": 16,
+    "sizeGap": 4,
+    "sizeKeyThickness": 8,
+    "styleRounded": true,
+    "styleGlow": false,
+    "className": "",
+    "x": 1020,
+    "y": 430,
+    "wires": []
+  },
+  {
+    "id": "chart_l",
+    "type": "ui-chart",
+    "z": "cp6flow01",
+    "name": "Historico Luminosidade",
+    "label": "Histórico de Luminosidade",
+    "group": "cp6uigroup",
+    "order": 6,
+    "chartType": "line",
+    "category": "topic",
+    "categoryType": "msg",
+    "xAxisLabel": "Horário",
+    "xAxisProperty": "",
+    "xAxisPropertyType": "timestamp",
+    "xAxisType": "time",
+    "xAxisFormat": "auto",
+    "xAxisFormatType": "auto",
+    "xmin": "",
+    "xmax": "",
+    "yAxisLabel": "Luminosidade (ADC)",
+    "yAxisProperty": "",
+    "yAxisPropertyType": "msg",
+    "ymin": "0",
+    "ymax": "4095",
+    "bins": "",
+    "action": "append",
+    "stackSeries": false,
+    "pointShape": "circle",
+    "pointRadius": 4,
+    "showLegend": true,
+    "removeOlder": "10",
+    "removeOlderUnit": "60",
+    "removeOlderPoints": "600",
+    "colors": [
+      "#0095ff",
+      "#ff7f0e",
+      "#2ca02c",
+      "#9467bd"
+    ],
+    "textColor": [
+      "#666666"
+    ],
+    "textColorDefault": true,
+    "gridColor": [
+      "#e5e5e5"
+    ],
+    "gridColorDefault": true,
+    "width": "6",
+    "height": "4",
+    "className": "",
+    "interpolation": "linear",
+    "x": 1020,
+    "y": 485,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "make_csv",
+    "type": "function",
+    "z": "cp6flow01",
+    "name": "Preparar histórico CSV",
+    "func": "// Persiste cada leitura recebida em CSV separado por ponto-e-virgula.\n// O caminho e relativo ao perfil de usuario que inicia o Node-RED.\nconst d = msg.payload;\nconst pasta = env.get('USERPROFILE') || env.get('HOME') || '.';\nmsg.filename = pasta + '/vinheria_agnello_historico.csv';\nmsg.payload = `${d.timestamp};${d.temperatura};${d.umidade};${d.luminosidade}`;\nreturn msg;",
+    "outputs": 1,
+    "timeout": 0,
+    "noerr": 0,
+    "initialize": "",
+    "finalize": "",
+    "libs": [],
+    "x": 730,
+    "y": 610,
+    "wires": [
+      [
+        "append_csv"
+      ]
+    ]
+  },
+  {
+    "id": "append_csv",
+    "type": "file",
+    "z": "cp6flow01",
+    "name": "Salvar CSV no computador Node-RED",
+    "filename": "filename",
+    "filenameType": "msg",
+    "appendNewline": true,
+    "createDir": false,
+    "overwriteFile": "false",
+    "encoding": "utf8",
+    "x": 1030,
+    "y": 610,
+    "wires": [
+      []
+    ]
+  },
+  {
+    "id": "cmt",
+    "type": "comment",
+    "z": "cp6flow01",
+    "name": "RECONSTRUCAO - nao e o fluxo exportado da faculdade. Importar e testar.",
+    "info": "A serie MQTT deve ser reproduzida pelo Wokwi. Historico recente: ui-chart. Historico persistente: file (CSV). Nao publique como validado sem executar o teste.",
+    "x": 475,
+    "y": 45,
+    "wires": []
+  },
+  {
+    "id": "cp6mqttbroker",
+    "type": "mqtt-broker",
+    "name": "Broker IoT professor",
+    "broker": "3.135.234.101",
+    "port": "1883",
+    "clientid": "",
+    "autoConnect": true,
+    "usetls": false,
+    "protocolVersion": "4",
+    "keepalive": "60",
+    "cleansession": true,
+    "autoUnsubscribe": true,
+    "birthTopic": "",
+    "birthQos": "0",
+    "birthRetain": "false",
+    "birthPayload": "",
+    "birthMsg": {},
+    "closeTopic": "",
+    "closeQos": "0",
+    "closeRetain": "false",
+    "closePayload": "",
+    "closeMsg": {},
+    "willTopic": "",
+    "willQos": "0",
+    "willRetain": "false",
+    "willPayload": "",
+    "willMsg": {},
+    "userProps": "",
+    "sessionExpiry": ""
+  },
+  {
+    "id": "cp6uigroup",
+    "type": "ui-group",
+    "name": "Sensores",
+    "page": "cp6uipage",
+    "width": "12",
+    "height": "1",
+    "order": 1,
+    "showTitle": true,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "cp6uipage",
+    "type": "ui-page",
+    "name": "Vinheria Agnello",
+    "ui": "cp6uibase",
+    "path": "/vinheria",
+    "icon": "chart-line",
+    "layout": "grid",
+    "theme": "cp6uitheme",
+    "order": 1,
+    "className": "",
+    "visible": "true",
+    "disabled": "false"
+  },
+  {
+    "id": "cp6uibase",
+    "type": "ui-base",
+    "name": "Vinheria Agnello - Dashboard",
+    "path": "/dashboard",
+    "includeClientData": true,
+    "acceptsClientConfig": [
+      "ui-control",
+      "ui-notification"
+    ],
+    "showPathInSidebar": false,
+    "showPageTitle": false,
+    "headerContent": "page",
+    "navigationStyle": "default",
+    "titleBarStyle": "default"
+  },
+  {
+    "id": "cp6uitheme",
+    "type": "ui-theme",
+    "name": "Vinheria Theme",
+    "colors": {
+      "surface": "#FFFFFF",
+      "primary": "#008EAF",
+      "bgPage": "#F1F4F8",
+      "groupBg": "#FFFFFF",
+      "groupOutline": "#D3D9E1"
+    },
+    "sizes": {
+      "pagePadding": "12px",
+      "groupGap": "12px",
+      "groupBorderRadius": "7px",
+      "widgetGap": "8px",
+      "density": "default"
+    }
+  }
+]
