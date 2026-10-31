@@ -1,4 +1,3 @@
-[README.md](https://github.com/user-attachments/files/34206047/README.md)
 # Check Point 06 - Edge Computing & Computer Systems
 
 ## Vinheria Agnello - IoT com Dashboard
